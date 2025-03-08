@@ -1,0 +1,57 @@
+-  `Ahmed Bashir Ali`
+- `Developer ringo {18-2-2025}`
+- ## Project Brief 
+	- ###### Package to Build:
+		-  [ ] Brand Design
+		-  [ ] Digital Design
+		-  [ ] Paper Design
+		-  [ ] Web Template
+		-  [ ] Dynamic Website / Web app
+
+	- ### Branding
+	  - #### Front-End-Website
+		  - ##### Documentation Tip: 
+			  - What are ways to make the process easier to achieve the end result? 
+			  - Do they have to show any Identification/Information to show it's legit Business? 
+			  - Are there people that might not understand the Steps to achieve their desired result? 
+			  - Walk through the process or steps, Make it as simple and straightforward as possible.
+			  - What would you like to have on your pages? 
+			  - Break it down into sections. What do you want to show on each page? 
+			  - What do you want to have in each section? Is it a set of pictures, or some text about a certain topic?
+
+			-  Page Design
+				-  [ ] Home
+			- Page Template
+				-  [ ] Home
+			- Front-End - Svelte
+				-  [ ] Home
+			- Front-End-Svelte Server
+				-  [ ] Home
+				-  [ ] 
+			- `(Optional) Client can Ask for their own Dashboard Design Catored to their Project.`
+			- Administrators Dashboard - Django
+				-  [ ] Customized Django Admin 
+				-  [ ] Customized Template Design
+	  - #### Back-End / Data-Base:
+		  - **Documentation Tip**: 
+			  - What are the main Functions or Features of the application 
+			  - Do they have  any Sub-Functions or Paid Features for the Clients and Consumers? 
+			  - Is there someone who has the Role of Monitoring how the application is running? 
+			  - Instead of just naming the Functions/Features, talk about what makes each Function/Feature’s role and its importance.
+			  - **Back-End Functionality - Django** :
+				  -  [ ] Client Models
+				  -  [ ]  Client Models organized to simplified Forms
+			  - **Models - Django**
+				  -  [ ] Base App - User Base, Group, Authentication Functionality 
+				  -  [ ] {{MainDataBase}} App - where the clients are stored 
+				  -  [ ] {{Other User Data}} App-User Permissions and other Functionalities
+			- **Data to Collect**
+				- What do you want to learn about your audience?
+			- **Serializers - Django Rest Framework**
+				-  [ ] EndPoints
+				-  [ ] Urls
+			- Advance Program + Pineal System 
+				- Documentation Tip: 
+					- What are the main Functions or Features of the application? 
+					- Do they have any Sub-Functions or Paid Features for the Clients and Consumers? 
+					- Is there someone who has the Role of Monitoring how the application is running? Instead of just naming the Functions/Features, talk about what makes each Function/Features role and its importance.
