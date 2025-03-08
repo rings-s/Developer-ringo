@@ -7,7 +7,9 @@ from django.core.validators import RegexValidator
 from django.core.exceptions import ValidationError
 from django.db import transaction
 import random
+import uuid
 from datetime import timedelta
+
 
 class Role(models.Model):
     """
@@ -23,6 +25,7 @@ class Role(models.Model):
         (STAFF, _('Staff')),
     ]
     
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(
         max_length=50, 
         choices=ROLE_CHOICES, 
@@ -68,18 +71,19 @@ class Role(models.Model):
                 'can_manage_payments': True,
                 'can_view_analytics': True,
                 'can_manage_system': True,
+                'can_manage_projects': True,
             },
             
             self.CLIENT: {
-                'can_book_services': True,
-                'can_view_bookings': True,
-                'can_view_reports': True,
-                'can_assist_users': True,
+                'can_view_own_projects': True,
+                'can_request_services': True,
+                'can_view_own_reports': True,
+                'can_submit_applications': True,
             },
             
             self.STAFF: {
                 'can_moderate_content': True,
-                'can_manage_bookings': True,
+                'can_manage_projects': True,
                 'can_handle_support': True,
                 'can_view_reports': True,
                 'can_assist_users': True,
@@ -93,6 +97,20 @@ class Role(models.Model):
         """
         if self.name not in dict(self.ROLE_CHOICES):
             raise ValidationError({'name': _('Invalid role name selected.')})
+            
+    @classmethod
+    def get_default_client_role(cls):
+        """
+        Get or create the default client role
+        """
+        role, created = cls.objects.get_or_create(
+            name=cls.CLIENT,
+            defaults={
+                'description': _('Default client role with standard permissions')
+            }
+        )
+        return role
+
 
 class CustomUserManager(BaseUserManager):
     """
@@ -125,11 +143,31 @@ class CustomUserManager(BaseUserManager):
             raise ValueError(_('Superuser must have is_superuser=True.'))
         
         return self.create_user(email, password, **extra_fields)
+        
+    def get_clients(self):
+        """
+        Return all users with client role
+        """
+        return self.filter(profile__role__name=Role.CLIENT, is_active=True)
+        
+    def get_staff(self):
+        """
+        Return all users with staff role
+        """
+        return self.filter(profile__role__name=Role.STAFF, is_active=True)
+        
+    def get_administrators(self):
+        """
+        Return all users with admin role
+        """
+        return self.filter(profile__role__name=Role.ADMIN, is_active=True)
+
 
 class UserProfile(models.Model):
     """
     Extended user profile with additional fields
     """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(
         'CustomUser', 
         on_delete=models.CASCADE, 
@@ -154,7 +192,7 @@ class UserProfile(models.Model):
     location = models.CharField(
         max_length=255,
         blank=True,
-        help_text=_('User\'s general location for matching with nearby client')
+        help_text=_('User\'s general location for matching with nearby clients')
     )
     timezone = models.CharField(
         max_length=50,
@@ -196,11 +234,31 @@ class UserProfile(models.Model):
         """
         self.last_active = timezone.now()
         self.save(update_fields=['last_active'])
+        
+    def is_client(self):
+        """
+        Check if user has client role
+        """
+        return self.role and self.role.name == Role.CLIENT
+        
+    def is_staff_member(self):
+        """
+        Check if user has staff role
+        """
+        return self.role and self.role.name == Role.STAFF
+        
+    def is_administrator(self):
+        """
+        Check if user has admin role
+        """
+        return self.role and self.role.name == Role.ADMIN
+
 
 class CustomUser(AbstractUser):
     """
     Custom user model with email-based authentication
     """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     username = None  # Remove username field
     email = models.EmailField(
         _('email address'), 
@@ -362,7 +420,7 @@ class CustomUser(AbstractUser):
                                    'verification_token_created'])
             
             # Create or update profile with appropriate role
-            default_role = Role.objects.get(name=Role.STUDENT)
+            default_role = Role.get_default_client_role()
             UserProfile.objects.update_or_create(
                 user=self,
                 defaults={'role': default_role}
@@ -395,6 +453,49 @@ class CustomUser(AbstractUser):
         if not self.account_locked_until:
             return False
         return timezone.now() < self.account_locked_until
+        
+    def get_profile(self):
+        """
+        Get or create user profile
+        """
+        profile, created = UserProfile.objects.get_or_create(user=self)
+        return profile
+        
+    def has_permission(self, permission_name):
+        """
+        Check if user has specific permission through their profile role
+        """
+        try:
+            return self.profile.has_permission(permission_name)
+        except UserProfile.DoesNotExist:
+            return False
+            
+    def is_client(self):
+        """
+        Check if user has client role
+        """
+        try:
+            return self.profile.is_client()
+        except UserProfile.DoesNotExist:
+            return False
+            
+    def is_staff_member(self):
+        """
+        Check if user has staff role
+        """
+        try:
+            return self.profile.is_staff_member()
+        except UserProfile.DoesNotExist:
+            return False
+            
+    def is_administrator(self):
+        """
+        Check if user has admin role
+        """
+        try:
+            return self.profile.is_administrator()
+        except UserProfile.DoesNotExist:
+            return False
 
     def clean(self):
         """
