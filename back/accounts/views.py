@@ -32,44 +32,11 @@ from .serializers import (
 from .utils import (
     validate_password_strength, normalize_email, send_verification_email,
     send_password_reset_email, send_welcome_email, get_client_ip,
-    record_login, assign_role, get_users_by_role, check_user_permission
+    record_login, assign_role, get_users_by_role, check_user_permission,
+    get_tokens_for_user
 )
 
 logger = logging.getLogger(__name__)
-
-# Helper functions
-def get_tokens_for_user(user):
-    """
-    Generate JWT tokens for a user
-    """
-    refresh = RefreshToken.for_user(user)
-    
-    # Add custom claims to the token
-    refresh['email'] = user.email
-    refresh['name'] = user.get_full_name()
-    
-    # Add role information if available
-    try:
-        if hasattr(user, 'profile') and user.profile.role:
-            refresh['role'] = user.profile.role.name
-            refresh['role_display'] = user.profile.role.get_name_display()
-    except UserProfile.DoesNotExist:
-        pass
-    
-    return {
-        'refresh': str(refresh),
-        'access': str(refresh.access_token),
-    }
-
-
-def jwt_response_handler(token, user=None, request=None):
-    """
-    Returns the response data for both the refresh and access token.
-    """
-    return {
-        'user': UserDetailSerializer(user, context={'request': request}).data,
-        'token': token
-    }
 
 
 @api_view(['POST'])

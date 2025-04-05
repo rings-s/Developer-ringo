@@ -41,3 +41,170 @@ urlpatterns = [
     # Permission check
     path('check-permission/', views.check_permission, name='check_permission'),
 ]
+
+"""
+API Documentation:
+
+Authentication Endpoints:
+-----------------------
+POST /accounts/register/
+    Register a new user
+    Body: {
+        "email": string,
+        "password": string,
+        "confirm_password": string,
+        "first_name": string,
+        "last_name": string,
+        "phone_number": string (optional),
+        "date_of_birth": date (optional)
+    }
+
+POST /accounts/verify-email/
+    Verify user's email address
+    Body: {
+        "email": string,
+        "verification_code": string
+    }
+
+POST /accounts/resend-verification/
+    Resend verification email
+    Body: {
+        "email": string
+    }
+
+POST /accounts/login/
+    Login and get JWT tokens
+    Body: {
+        "email": string,
+        "password": string
+    }
+
+POST /accounts/refresh-token/
+    Refresh access token
+    Body: {
+        "refresh": string
+    }
+
+POST /accounts/logout/
+    Logout user by blacklisting token
+    Body: {
+        "refresh": string
+    }
+
+Password Management:
+------------------
+POST /accounts/request-password-reset/
+    Request password reset
+    Body: {
+        "email": string
+    }
+
+POST /accounts/confirm-password-reset/
+    Confirm password reset with code
+    Body: {
+        "email": string,
+        "reset_code": string,
+        "new_password": string,
+        "confirm_password": string
+    }
+
+POST /accounts/change-password/
+    Change password (requires authentication)
+    Body: {
+        "current_password": string,
+        "new_password": string,
+        "confirm_password": string
+    }
+
+Profile Management:
+-----------------
+GET /accounts/profile/
+    Get user profile data (requires authentication)
+
+PUT /accounts/profile/update/
+    Update user profile (requires authentication)
+    Body: {
+        "first_name": string (optional),
+        "last_name": string (optional),
+        "phone_number": string (optional),
+        "date_of_birth": date (optional),
+        "bio": string (optional),
+        "avatar": file (optional),
+        "location": string (optional),
+        "timezone": string (optional),
+        "preferences": json (optional)
+    }
+
+DELETE /accounts/deactivate-account/
+    Deactivate user account (requires authentication)
+    Body: {
+        "password": string,
+        "refresh": string (optional)
+    }
+
+Admin Endpoints (require admin privileges):
+-----------------------------------------
+GET /accounts/roles/
+    Get all roles
+
+POST /accounts/assign-role/
+    Assign role to user
+    Body: {
+        "user_id": string (UUID),
+        "role_id": string (UUID)
+    }
+
+GET /accounts/users/
+    Get all users
+    Query parameters:
+        role: string (filter by role)
+        is_active: boolean (filter by active status)
+        is_verified: boolean (filter by verification status)
+        search: string (search in email, name, phone)
+
+GET /accounts/users/<uuid:user_id>/
+    Get specific user details
+
+PUT /accounts/users/<uuid:user_id>/update/
+    Update user details
+    Body: {
+        "first_name": string (optional),
+        "last_name": string (optional),
+        "phone_number": string (optional),
+        "date_of_birth": date (optional),
+        "is_active": boolean (optional),
+        "is_verified": boolean (optional),
+        "role_id": string (UUID) (optional)
+    }
+
+POST /accounts/users/create/
+    Create a new user
+    Body: {
+        "email": string,
+        "password": string,
+        "confirm_password": string (optional),
+        "first_name": string,
+        "last_name": string,
+        "phone_number": string (optional),
+        "date_of_birth": date (optional),
+        "role": UUID (optional),
+        "verify_now": boolean (optional)
+    }
+
+DELETE /accounts/users/<uuid:user_id>/delete/
+    Delete a user
+
+Other Endpoints:
+--------------
+POST /accounts/validate-token/
+    Validate JWT token
+    Body: {
+        "token": string
+    }
+
+POST /accounts/check-permission/
+    Check if user has specific permission (requires authentication)
+    Body: {
+        "permission": string
+    }
+"""

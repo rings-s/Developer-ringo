@@ -136,6 +136,7 @@ class CustomUserManager(BaseUserManager):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('is_active', True)
+        extra_fields.setdefault('is_verified', True)
         
         if extra_fields.get('is_staff') is not True:
             raise ValueError(_('Superuser must have is_staff=True.'))
@@ -161,97 +162,6 @@ class CustomUserManager(BaseUserManager):
         Return all users with admin role
         """
         return self.filter(profile__role__name=Role.ADMIN, is_active=True)
-
-
-class UserProfile(models.Model):
-    """
-    Extended user profile with additional fields
-    """
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.OneToOneField(
-        'CustomUser', 
-        on_delete=models.CASCADE, 
-        related_name='profile'
-    )
-    role = models.ForeignKey(
-        Role, 
-        on_delete=models.SET_NULL, 
-        null=True,
-        help_text=_('User role determines permissions and access levels')
-    )
-    bio = models.TextField(
-        blank=True,
-        help_text=_('User biography or introduction')
-    )
-    avatar = models.ImageField(
-        upload_to='avatars/', 
-        null=True, 
-        blank=True,
-        help_text=_('Profile picture')
-    )
-    location = models.CharField(
-        max_length=255,
-        blank=True,
-        help_text=_('User\'s general location for matching with nearby clients')
-    )
-    timezone = models.CharField(
-        max_length=50,
-        blank=True,
-        help_text=_('User\'s timezone for scheduling purposes')
-    )
-    preferences = models.JSONField(
-        default=dict,
-        blank=True,
-        help_text=_('User preferences and settings')
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-    last_active = models.DateTimeField(
-        null=True, 
-        blank=True,
-        help_text=_('Last activity timestamp')
-    )
-
-    class Meta:
-        verbose_name = _('user profile')
-        verbose_name_plural = _('user profiles')
-        ordering = ['-created_at']
-
-    def __str__(self):
-        return f"{self.user.get_full_name()}'s Profile"
-
-    def has_permission(self, permission_name):
-        """
-        Check if the user has a specific permission based on their role
-        """
-        if not self.role:
-            return False
-        return self.role.default_permissions.get(permission_name, False)
-
-    def update_last_active(self):
-        """
-        Update the last active timestamp
-        """
-        self.last_active = timezone.now()
-        self.save(update_fields=['last_active'])
-        
-    def is_client(self):
-        """
-        Check if user has client role
-        """
-        return self.role and self.role.name == Role.CLIENT
-        
-    def is_staff_member(self):
-        """
-        Check if user has staff role
-        """
-        return self.role and self.role.name == Role.STAFF
-        
-    def is_administrator(self):
-        """
-        Check if user has admin role
-        """
-        return self.role and self.role.name == Role.ADMIN
 
 
 class CustomUser(AbstractUser):
@@ -299,8 +209,6 @@ class CustomUser(AbstractUser):
     )
     
     # Authentication fields
-    verification_token = models.CharField(max_length=100, blank=True)
-    verification_token_created = models.DateTimeField(null=True, blank=True)
     verification_code = models.CharField(max_length=6, blank=True)
     verification_code_created = models.DateTimeField(null=True, blank=True)
     reset_code = models.CharField(max_length=6, blank=True)
@@ -413,11 +321,8 @@ class CustomUser(AbstractUser):
             self.is_verified = True
             self.verification_code = ""
             self.verification_code_created = None
-            self.verification_token = ""
-            self.verification_token_created = None
             self.save(update_fields=['is_verified', 'verification_code', 
-                                   'verification_code_created', 'verification_token',
-                                   'verification_token_created'])
+                                   'verification_code_created'])
             
             # Create or update profile with appropriate role
             default_role = Role.get_default_client_role()
@@ -510,3 +415,94 @@ class CustomUser(AbstractUser):
                 raise ValidationError(
                     {'date_of_birth': _('Users must be at least 13 years old.')}
                 )
+
+
+class UserProfile(models.Model):
+    """
+    Extended user profile with additional fields
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField(
+        'CustomUser', 
+        on_delete=models.CASCADE, 
+        related_name='profile'
+    )
+    role = models.ForeignKey(
+        Role, 
+        on_delete=models.SET_NULL, 
+        null=True,
+        help_text=_('User role determines permissions and access levels')
+    )
+    bio = models.TextField(
+        blank=True,
+        help_text=_('User biography or introduction')
+    )
+    avatar = models.ImageField(
+        upload_to='avatars/', 
+        null=True, 
+        blank=True,
+        help_text=_('Profile picture')
+    )
+    location = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text=_('User\'s general location for matching with nearby clients')
+    )
+    timezone = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text=_('User\'s timezone for scheduling purposes')
+    )
+    preferences = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text=_('User preferences and settings')
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    last_active = models.DateTimeField(
+        null=True, 
+        blank=True,
+        help_text=_('Last activity timestamp')
+    )
+
+    class Meta:
+        verbose_name = _('user profile')
+        verbose_name_plural = _('user profiles')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.get_full_name()}'s Profile"
+
+    def has_permission(self, permission_name):
+        """
+        Check if the user has a specific permission based on their role
+        """
+        if not self.role:
+            return False
+        return self.role.default_permissions.get(permission_name, False)
+
+    def update_last_active(self):
+        """
+        Update the last active timestamp
+        """
+        self.last_active = timezone.now()
+        self.save(update_fields=['last_active'])
+        
+    def is_client(self):
+        """
+        Check if user has client role
+        """
+        return self.role and self.role.name == Role.CLIENT
+        
+    def is_staff_member(self):
+        """
+        Check if user has staff role
+        """
+        return self.role and self.role.name == Role.STAFF
+        
+    def is_administrator(self):
+        """
+        Check if user has admin role
+        """
+        return self.role and self.role.name == Role.ADMIN

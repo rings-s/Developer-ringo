@@ -358,3 +358,29 @@ def check_user_permission(user, permission_name):
     
     # Check permission through profile role
     return user.has_permission(permission_name)
+
+
+def get_tokens_for_user(user):
+    """
+    Generate JWT tokens for a user
+    """
+    from rest_framework_simplejwt.tokens import RefreshToken
+    
+    refresh = RefreshToken.for_user(user)
+    
+    # Add custom claims to the token
+    refresh['email'] = user.email
+    refresh['name'] = user.get_full_name()
+    
+    # Add role information if available
+    try:
+        if hasattr(user, 'profile') and user.profile.role:
+            refresh['role'] = user.profile.role.name
+            refresh['role_display'] = user.profile.role.get_name_display()
+    except UserProfile.DoesNotExist:
+        pass
+    
+    return {
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    }
